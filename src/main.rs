@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use m4a;
 
 fn main() {
