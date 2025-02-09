@@ -4,6 +4,8 @@ use std::path::PathBuf;
 mod chunks;
 mod reader;
 mod utils;
+use chunks::ChunkBox;
+use utils::*;
 
 pub fn read(filepath: PathBuf) -> std::io::Result<()> {
     let file = std::fs::read(filepath)?;
@@ -11,23 +13,22 @@ pub fn read(filepath: PathBuf) -> std::io::Result<()> {
 
     // read chunk
     let mut counter = 0;
+    let mut all_chunks: Vec<ChunkBox> = Vec::new();
     while counter < file.len() {
         // get chunk_size
-        let chunk_size = reader::get_chunk_size(
-            &file[counter..counter + 4]
-                .try_into()
-                .expect("Slice must be 4 byte"),
-        );
+        let chunk = match reader::get_chunk_info(&file[counter..counter + 8]) {
+            Some(c) => c,
+            None => panic!("Error reading file at counter {}", counter),
+        };
 
-        let chunk = chunks::Chunk::new(
-            chunk_size,
-            &file[counter + 4..counter + 8].try_into().expect("4b"),
-        );
-        println!("{:?}", chunk);
-
-        let ftyp = chunks::Ftyp::new(chunk, &file[counter..counter + chunk_size as usize]);
-        println!("{}", ftyp);
-        todo!();
+        match reader::match_chunk_type(&chunk, &file[counter..counter + chunk.size as usize]) {
+            Some(c) => all_chunks.push(c),
+            None => panic!(
+                "Could not read chunk {}..{}",
+                counter,
+                counter + chunk.size as usize
+            ),
+        }
 
         if counter >= file.len() {
             break;

@@ -4,8 +4,8 @@ use crate::utils::*;
 
 #[derive(Debug, Clone)]
 pub struct Chunk {
-    size: u32,
-    chunk_type: String,
+    pub size: u32,
+    pub chunk_type: String,
 }
 
 impl Chunk {
@@ -65,4 +65,8 @@ impl fmt::Display for Ftyp {
             self.compatible_brands
         )
     }
+}
+
+pub enum ChunkBox {
+    Ftyp(Ftyp),
 }
