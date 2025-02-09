@@ -6,13 +6,21 @@ use crate::utils::*;
 pub struct Chunk {
     pub size: u32,
     pub chunk_type: String,
+    pub data: Vec<u8>,
+}
+
+pub trait M4aChunk {
+    fn new(chunk: Chunk) -> Self;
 }
 
 impl Chunk {
-    pub fn new(size: u32, type_byte: &[u8; 4]) -> Chunk {
+    pub fn new(size: u32, data: &[u8]) -> Chunk {
         Chunk {
             size,
-            chunk_type: Chunk::match_chunk_type(type_byte),
+            data: data.to_vec(),
+            chunk_type: Chunk::match_chunk_type(
+                &data[4..8].try_into().expect("Slice must be 4 byte"),
+            ),
         }
     }
 
@@ -27,6 +35,7 @@ impl Chunk {
     }
 }
 
+#[derive(Debug)]
 pub struct Ftyp {
     chunk: Chunk,
     major_brand: u32,
@@ -34,24 +43,29 @@ pub struct Ftyp {
     compatible_brands: Vec<u32>,
 }
 
-impl Ftyp {
-    pub fn new(chunk: Chunk, bytes: &[u8]) -> Ftyp {
+impl M4aChunk for Ftyp {
+    fn new(chunk: Chunk) -> Ftyp {
         Ftyp {
             chunk: chunk.clone(),
-            major_brand: by_to_u32(&bytes[4..8]),
-            minor_version: by_to_u32(&bytes[8..12]),
+            major_brand: by_to_u32(&chunk.data[4..8]),
+            minor_version: by_to_u32(&chunk.data[8..12]),
             compatible_brands: {
                 let mut all: Vec<u32> = Vec::new();
                 let compatible_brands_number = chunk.size - 16;
                 if compatible_brands_number > 0 {
                     for i in (16..chunk.size).step_by(4) {
-                        all.push(by_to_u32(&bytes[i as usize..i as usize + 4]));
+                        all.push(by_to_u32(&chunk.data[i as usize..i as usize + 4]));
                     }
                 }
                 all
             },
         }
     }
+}
+
+#[derive(Debug)]
+pub enum ChunkBox {
+    Ftyp(Ftyp),
 }
 
 impl fmt::Display for Ftyp {
@@ -65,8 +79,4 @@ impl fmt::Display for Ftyp {
             self.compatible_brands
         )
     }
-}
-
-pub enum ChunkBox {
-    Ftyp(Ftyp),
 }
