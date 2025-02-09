@@ -15,6 +15,7 @@ pub fn read(filepath: PathBuf) -> std::io::Result<()> {
     let mut counter = 0;
     let mut all_chunks: Vec<ChunkBox> = Vec::new();
     while counter < file.len() {
+        println!("Reading chunk counter {}", counter);
         // get chunk_size
         let chunk = match reader::get_chunk_info(&file[counter..counter + 8]) {
             Some(c) => c,
@@ -23,13 +24,14 @@ pub fn read(filepath: PathBuf) -> std::io::Result<()> {
 
         match reader::match_chunk_type(&chunk, &file[counter..counter + chunk.size as usize]) {
             Some(c) => all_chunks.push(c),
-            None => panic!(
-                "Could not read chunk {}..{}",
+            None => println!(
+                "Chunk at  {}..{} is either invalid or skippable",
                 counter,
                 counter + chunk.size as usize
             ),
         }
 
+        counter += chunk.size as usize;
         if counter >= file.len() {
             break;
         }

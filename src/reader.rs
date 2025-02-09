@@ -1,10 +1,6 @@
 use crate::chunks::*;
 use crate::utils::*;
 
-pub fn get_chunk_size(array: &[u8; 4]) -> u32 {
-    u32::from_be_bytes(*array)
-}
-
 pub fn get_chunk_info(data: &[u8]) -> Option<Chunk> {
     if data.len() != 8 {
         panic!("Slice should be 8 byte");
